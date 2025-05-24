@@ -1,0 +1,278 @@
+.matrix-input {
+    width: 60px;
+    text-align: center;
+    margin: 5px;
+    padding: 5px;
+}
+
+.equation-system {
+    margin: 20px 0;
+    padding-left: 20px;
+}
+
+.matrix-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.matrix-size-display {
+    font-size: 1.2em;
+    margin-left: 15px;
+}
+
+.matrix-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+}
+
+.matrix-label {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-right: 20px;
+}
+
+.matrix-brace {
+    font-family: Times New Roman;
+    font-size: 60px;
+    line-height: 0.7;
+    color: #000;
+    align-self: center;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+.matrix-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.equation-row {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    white-space: nowrap;
+}
+
+.equation-row span {
+    margin: 0 5px;
+}
+
+.equation-row sub {
+    margin-left: 2px;
+} 
+
+.matrix-controls .btn-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.matrix-size-display {
+    font-size: 1.1rem;
+}
+
+.badge {
+    font-size: 1.1rem;
+    padding: 0.3rem 0.6rem;
+}
+
+.btn-outline-primary:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s;
+}
+
+.matrix-controls .card {
+    border-radius: 15px;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.variable-label {
+    display: inline-block;
+    margin: 0 5px;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.variable-label sub {
+    color: #3498db;
+    font-weight: 500;
+}
+
+.equals-sign {
+    display: inline-block;
+    margin: 0 10px;
+    font-size: 1.2rem;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.matrix-input {
+    width: 60px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px;
+    margin: 2px;
+    transition: border-color 0.2s;
+}
+
+.matrix-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.result-input {
+    background-color: #f8f9fa;
+    border-color: #3498db;
+}
+
+.equation-row {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estilos para el modal personalizado */
+.custom-modal .modal-header {
+    border-radius: 15px 15px 0 0;
+    background: #f8f9fa;
+}
+
+.custom-modal .modal-content {
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Estilos para los toasts */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1060;
+}
+
+.custom-toast {
+    min-width: 300px;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 10px;
+}
+
+.toast-success {
+    border-left: 4px solid #198754;
+}
+
+.toast-error {
+    border-left: 4px solid #dc3545;
+}
+
+.toast-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.toast-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+/* Estilos para la sección de resultados */
+.result-section {
+    display: none;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 15px;
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.result-section.show {
+    display: block;
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.process-step {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #3498db;
+    background: #f8f9fa;
+    border-radius: 0 8px 8px 0;
+}
+
+.solution-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.solution-card {
+    padding: 1rem;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+}
+
+.matrix-display {
+    overflow-x: auto;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.matrix-display table {
+    margin: 0 auto;
+}
+
+.matrix-display td {
+    padding: 0.5rem;
+    text-align: center;
+    min-width: 60px;
+}
+
+.step-number {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    background: #3498db;
+    color: white;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.solution-value {
+    font-size: 1.2rem;
+    color: #2c3e50;
+    font-weight: 500;
+    margin: 0.5rem 0;
+}
+
+.determinant-value {
+    color: #e74c3c;
+    font-weight: 500;
+}

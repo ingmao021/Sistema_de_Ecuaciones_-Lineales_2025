@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <!-- CSRF Token -->
+    {% csrf_token %}
+    <title>Resolver Sistemas de Ecuaciones Lineales</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="text-center mb-4">Resolver Sistemas de Ecuaciones Lineales</h1>
+        
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="matrix-controls mb-4">
+                    <div class="card p-3 bg-light">
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                            <div class="btn-group" role="group" aria-label="Controles de tamaño de matriz">
+                                <button class="btn btn-outline-primary" 
+                                        onclick="decreaseSize()" 
+                                        id="btnDecrease"
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-placement="top" 
+                                        title="Reducir tamaño de la matriz">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <div class="px-3 py-2 bg-white border-top border-bottom d-flex align-items-center">
+                                    <span class="matrix-size-display">
+                                        <strong>Matriz:</strong> 
+                                        <span id="currentSize" class="badge bg-primary">2</span> × 
+                                        <span id="currentSize2" class="badge bg-primary">2</span>
+                                    </span>
+                                </div>
+                                <button class="btn btn-outline-primary" 
+                                        onclick="increaseSize()" 
+                                        id="btnIncrease"
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-placement="top" 
+                                        title="Aumentar tamaño de la matriz">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="matrix-wrapper">
+                    <div class="matrix-brace">&#123;</div>
+                    <div id="matrixContainer" class="text-center equation-system">
+                        <!-- La matriz se generará dinámicamente aquí -->
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <select class="form-select mb-3" id="solutionMethod">
+                                <option value="cramer">Solución por método de Cramer</option>
+                                <option value="inverse">Solución por método de matriz inversa</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="resolveSystem()">Resolver Sistema</button>
+                </div>
+
+                <div id="result" class="result-section">
+                    <!-- Los resultados se mostrarán aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS y Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Modal para mensajes -->
+    <div class="modal fade custom-modal" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="messageModalLabel">Mensaje del Sistema</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="messageModalBody">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor para los toasts -->
+    <div class="toast-container"></div>
+
+    <script>
+        let currentSize = 2;
+        const MIN_SIZE = 2;
+        const MAX_SIZE = 6;
+
+        function updateSizeDisplay() {
+            document.getElementById('currentSize').textContent = currentSize;
+            document.getElementById('currentSize2').textContent = currentSize;
+            
+            const btnDecrease = document.getElementById('btnDecrease');
+            const btnIncrease = document.getElementById('btnIncrease');
+            
+            btnDecrease.disabled = currentSize <= MIN_SIZE;
+            btnIncrease.disabled = currentSize >= MAX_SIZE;
+            
+            // Actualizar los tooltips según el estado
+            if (currentSize <= MIN_SIZE) {
+                btnDecrease.setAttribute('title', 'Tamaño mínimo alcanzado');
+            } else {
+                btnDecrease.setAttribute('title', 'Reducir tamaño de la matriz');
+            }
+            
+            if (currentSize >= MAX_SIZE) {
+                btnIncrease.setAttribute('title', 'Tamaño máximo alcanzado');
+            } else {
+                btnIncrease.setAttribute('title', 'Aumentar tamaño de la matriz');
+            }
+        }
+
+        function increaseSize() {
+            if (currentSize < MAX_SIZE) {
+                currentSize++;
+                updateSizeDisplay();
+                createMatrix();
+            }
+        }
+
+        function decreaseSize() {
+            if (currentSize > MIN_SIZE) {
+                currentSize--;
+                updateSizeDisplay();
+                createMatrix();
+            }
+        }
+
+        function updateMatrixBrace() {
+            const matrixContainer = document.getElementById('matrixContainer');
+            const brace = document.querySelector('.matrix-brace');
+            const height = matrixContainer.offsetHeight;
+            brace.style.fontSize = `${height * 0.8}px`;
+        }
+
+        function createMatrix() {
+            const container = document.getElementById('matrixContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < currentSize; i++) {
+                const row = document.createElement('div');
+                row.className = 'equation-row';
+                let rowHTML = '';
+
+                for (let j = 0; j < currentSize; j++) {
+                    rowHTML += `
+                        <input type="number" class="matrix-input" id="a${i}${j}" step="any" required 
+                               placeholder="0">
+                        <span class="variable-label">x<sub>${j + 1}</sub>${j === currentSize-1 ? '' : ' +'}</span>
+                    `;
+                }
+                rowHTML += `<span class="equals-sign">=</span>
+                           <input type="number" class="matrix-input result-input" id="b${i}" step="any" required placeholder="0">`;
+                row.innerHTML = rowHTML;
+                container.appendChild(row);
+            }
+            
+            setTimeout(updateMatrixBrace, 0);
+        }
+
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast custom-toast toast-${type} show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            
+            const toast = document.getElementById(toastId);
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        function showModal(title, message, type = 'info') {
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            const modalTitle = document.getElementById('messageModalLabel');
+            const modalBody = document.getElementById('messageModalBody');
+            
+            modalTitle.textContent = title;
+            modalBody.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle text-success' : 
+                                     type === 'error' ? 'exclamation-circle text-danger' : 
+                                     type === 'warning' ? 'exclamation-triangle text-warning' : 
+                                     'info-circle text-info'} fa-2x me-3"></i>
+                    <div>${message}</div>
+                </div>
+            `;
+            
+            modal.show();
+        }
+
+        async function resolveSystem() {
+            let matrix = [];
+            let vector = [];
+            const method = document.getElementById('solutionMethod').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.classList.remove('show');
+            
+            // Restablecer todos los bordes a su color original
+            document.querySelectorAll('.matrix-input').forEach(input => {
+                input.style.borderColor = '#dee2e6';
+            });
+            
+            // Validar que todos los campos estén llenos
+            let camposVacios = false;
+            let datosInvalidos = false;
+            
+            for (let i = 0; i < currentSize; i++) {
+                let row = [];
+                for (let j = 0; j < currentSize; j++) {
+                    const input = document.getElementById(`a${i}${j}`);
+                    const valor = input.value.trim();
+                    if (valor === '') {
+                        camposVacios = true;
+                        input.style.borderColor = 'red';
+                    } else {
+                        const numValue = parseFloat(valor);
+                        if (isNaN(numValue)) {
+                            datosInvalidos = true;
+                            input.style.borderColor = 'red';
+                        } else {
+                            row.push(numValue);
+                        }
+                    }
+                }
+                const resultInput = document.getElementById(`b${i}`);
+                const valorResult = resultInput.value.trim();
+                if (valorResult === '') {
+                    camposVacios = true;
+                    resultInput.style.borderColor = 'red';
+                } else {
+                    const numValue = parseFloat(valorResult);
+                    if (isNaN(numValue)) {
+                        datosInvalidos = true;
+                        resultInput.style.borderColor = 'red';
+                    } else {
+                        vector.push(numValue);
+                    }
+                }
+                matrix.push(row);
+            }
+
+            if (camposVacios) {
+                showModal(
+                    'Campos Incompletos',
+                    `<p>Por favor, complete todos los campos del sistema de ecuaciones antes de resolver.</p>
+                     <p>Los campos vacíos están marcados en rojo.</p>`,
+                    'warning'
+                );
+                return;
+            }
+
+            if (datosInvalidos) {
+                showModal(
+                    'Datos Inválidos',
+                    `<p>Por favor, ingrese solo números válidos en todos los campos.</p>
+                     <p>Los campos con datos inválidos están marcados en rojo.</p>`,
+                    'warning'
+                );
+                return;
+            }
+
+            // Log de datos antes de enviar
+            console.log('Enviando datos:', {
+                matrix: matrix,
+                vector: vector,
+                method: method
+            });
+
+            try {
+                const response = await fetch('{% url "solve_system" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ matrix, vector, method })
+                });
+
+                const data = await response.json();
+                console.log('Respuesta del servidor:', data);
+
+                if (!response.ok) {
+                    let errorMessage = 'Error al procesar el sistema de ecuaciones.';
+                    let debugInfo = '';
+                    
+                    if (data.error) {
+                        errorMessage = data.error;
+                        if (data.debug_info) {
+                            debugInfo = `
+                                <hr>
+                                <div class="debug-info">
+                                    <h6>Información de Depuración:</h6>
+                                    <pre class="bg-light p-2 mt-2" style="font-size: 0.85em;">
+Matriz ingresada:
+${JSON.stringify(matrix, null, 2)}
+
+Vector ingresado:
+${JSON.stringify(vector, null, 2)}
+
+Método seleccionado: ${method}
+
+${data.debug_info.error_detail ? `Error detallado:
+${data.debug_info.error_detail}` : ''}
+                                    </pre>
+                                </div>`;
+                        }
+                    }
+                    
+                    showModal(
+                        'Error en el Sistema',
+                        `<p>${errorMessage}</p>
+                         <p>Por favor, verifique que los valores ingresados sean correctos y que el sistema tenga solución.</p>
+                         ${debugInfo}`,
+                        'error'
+                    );
+                    return;
+                }
+
+                // Construir el contenido de resultados
+                let resultContent = `
+                    <div class="result-header text-center mb-4">
+                        <h3 class="section-title">Resultados del Sistema</h3>
+                        <span class="method-badge">
+                            <i class="fas ${method === 'inverse' ? 'fa-calculator' : 'fa-superscript'} me-2"></i>
+                            Método: ${method === 'inverse' ? 'Matriz Inversa' : 'Cramer'}
+                        </span>
+                    </div>
+                    <div class="process-step">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-number">1</span>
+                            <h5 class="mb-0">Sistema Original</h5>
+                        </div>
+                        <div class="matrix-display">
+                            <table class="table table-sm">
+                                ${matrix.map((row, i) => `
+                                    <tr>
+                                        ${row.map((val, j) => `
+                                            <td class="interactive-element">${val}x<sub>${j + 1}</sub>${j < row.length - 1 ? ' + ' : ''}</td>
+                                        `).join('')}
+                                        <td>= ${vector[i]}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    </div>`;
+
+                if (method === 'inverse') {
+                    resultContent += `
+                        <div class="process-step">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="step-number">2</span>
+                                <h5 class="mb-0">Matriz Inversa Calculada</h5>
+                            </div>
+                            <div class="matrix-display">
+                                <table class="table table-bordered table-sm">
+                                    ${data.inverse_matrix.map(row => `
+                                        <tr>
+                                            ${row.map(val => `<td class="interactive-element">${val.toFixed(4)}</td>`).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </table>
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Se multiplica la matriz inversa por el vector de términos independientes para obtener la solución.
+                            </div>
+                        </div>`;
+                } else {
+                    resultContent += `
+                        <div class="process-step">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="step-number">2</span>
+                                <h5 class="mb-0">Método de Cramer - Proceso</h5>
+                            </div>
+                            <p class="mb-3">Para resolver el sistema usando el método de Cramer, calculamos:</p>
+                            
+                            <div class="cramer-process mb-4">
+                                <div class="matrix-section">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-matrix me-2"></i>
+                                        Matriz Original (A)
+                                    </h6>
+                                    <div class="matrix-display">
+                                        <table class="table table-sm table-bordered">
+                                            ${data.original_matrix.map(row => `
+                                                <tr>
+                                                    ${row.map(val => `<td class="interactive-element">${val.toFixed(2)}</td>`).join('')}
+                                                </tr>
+                                            `).join('')}
+                                        </table>
+                                    </div>
+                                    <div class="text-center mt-3">
+                                        <span class="badge bg-primary">|A| = ${data.determinant.toFixed(4)}</span>
+                                    </div>
+                                </div>
+
+                                ${data.cramer_matrices.map((matrix, index) => `
+                                    <div class="matrix-section">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-subscript me-2"></i>
+                                            Matriz A<sub>${index + 1}</sub> (Para x<sub>${index + 1}</sub>)
+                                        </h6>
+                                        <div class="matrix-display">
+                                            <table class="table table-sm table-bordered">
+                                                ${matrix.map(row => `
+                                                    <tr>
+                                                        ${row.map(val => `<td class="interactive-element">${val.toFixed(2)}</td>`).join('')}
+                                                    </tr>
+                                                `).join('')}
+                                            </table>
+                                        </div>
+                                        <div class="text-center mt-3">
+                                            <span class="badge bg-info">|A<sub>${index + 1}</sub>| = ${data.cramer_determinants[index].toFixed(4)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="cramer-formulas mt-4">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-calculator me-2"></i>
+                                    Fórmulas aplicadas:
+                                </h6>
+                                ${data.solution.map((value, index) => `
+                                    <div class="formula-item">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span>x<sub>${index + 1}</sub> = |A<sub>${index + 1}</sub>| / |A| =</span>
+                                            <span class="badge bg-light text-dark">
+                                                ${data.cramer_determinants[index].toFixed(4)} / ${data.determinant.toFixed(4)} = 
+                                                <strong>${value.toFixed(4)}</strong>
+                                            </span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                }
+
+                resultContent += `
+                    <div class="process-step">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-number">3</span>
+                            <h5 class="mb-0">Solución del Sistema</h5>
+                        </div>
+                        <div class="solution-grid">
+                            ${data.solution.map((value, index) => `
+                                <div class="solution-card interactive-element">
+                                    <div class="solution-value">
+                                        <i class="fas fa-equals me-2"></i>
+                                        x<sub>${index + 1}</sub> = ${value.toFixed(4)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-number">4</span>
+                            <h5 class="mb-0">Información Adicional</h5>
+                        </div>
+                        <div class="alert alert-light border">
+                            <p class="mb-2">
+                                <i class="fas fa-calculator me-2"></i>
+                                Determinante del sistema: 
+                                <span class="determinant-value">${data.determinant.toFixed(4)}</span>
+                            </p>
+                            <p class="mb-0 text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Un determinante distinto de cero confirma que el sistema tiene solución única.
+                            </p>
+                        </div>
+                    </div>`;
+
+                // Agregar estilos específicos para el método de Cramer
+                const styleElement = document.createElement('style');
+                styleElement.textContent = `
+                    .result-section {
+                        display: none;
+                        margin-top: 2rem;
+                        padding: 1.5rem;
+                        border-radius: 15px;
+                        background: white;
+                        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .result-section.show {
+                        display: block;
+                        animation: slideDown 0.5s ease;
+                    }
+                    
+                    @keyframes slideDown {
+                        from {
+                            opacity: 0;
+                            transform: translateY(-20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                    
+                    .process-step {
+                        padding: 1.5rem;
+                        margin-bottom: 1.5rem;
+                        border-left: 4px solid #3498db;
+                        background: #f8f9fa;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                        transition: transform 0.3s ease;
+                    }
+
+                    .process-step:hover {
+                        transform: translateX(5px);
+                    }
+                    
+                    .solution-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        gap: 1.5rem;
+                        margin-top: 1.5rem;
+                    }
+                    
+                    .solution-card {
+                        padding: 1.5rem;
+                        border-radius: 12px;
+                        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+                        border: 1px solid rgba(52, 152, 219, 0.1);
+                        transition: all 0.3s ease;
+                    }
+
+                    .solution-card:hover {
+                        transform: translateY(-5px);
+                        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+                    }
+                    
+                    .matrix-display {
+                        overflow-x: auto;
+                        margin: 1rem 0;
+                        padding: 1.5rem;
+                        background: white;
+                        border-radius: 12px;
+                        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+                    }
+                    
+                    .matrix-display table {
+                        margin: 0 auto;
+                        border-collapse: separate;
+                        border-spacing: 3px;
+                    }
+                    
+                    .matrix-display td {
+                        padding: 0.75rem;
+                        text-align: center;
+                        min-width: 70px;
+                        background: #f8f9fa;
+                        border-radius: 6px;
+                        font-family: 'Courier New', monospace;
+                    }
+                    
+                    .step-number {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 32px;
+                        height: 32px;
+                        line-height: 32px;
+                        text-align: center;
+                        background: linear-gradient(145deg, #3498db, #2980b9);
+                        color: white;
+                        border-radius: 50%;
+                        margin-right: 12px;
+                        font-weight: 600;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                    }
+                    
+                    .solution-value {
+                        font-size: 1.4rem;
+                        color: #2c3e50;
+                        font-weight: 600;
+                        text-align: center;
+                        margin: 0.5rem 0;
+                        padding: 0.5rem;
+                        background: rgba(52, 152, 219, 0.1);
+                        border-radius: 8px;
+                    }
+                    
+                    .determinant-value {
+                        color: #e74c3c;
+                        font-weight: 600;
+                        padding: 0.25rem 0.5rem;
+                        background: rgba(231, 76, 60, 0.1);
+                        border-radius: 4px;
+                    }
+
+                    .formula-item {
+                        background: white;
+                        padding: 1rem;
+                        margin: 0.75rem 0;
+                        border-radius: 8px;
+                        font-family: 'Courier New', monospace;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                        border: 1px solid rgba(52, 152, 219, 0.1);
+                        transition: all 0.3s ease;
+                    }
+
+                    .formula-item:hover {
+                        transform: scale(1.02);
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                    }
+
+                    .cramer-process {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                        gap: 2rem;
+                        padding: 1rem;
+                    }
+                    
+                    .matrix-section {
+                        background: white;
+                        padding: 1.5rem;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                        border: 1px solid rgba(52, 152, 219, 0.1);
+                        transition: transform 0.3s ease;
+                    }
+
+                    .matrix-section:hover {
+                        transform: translateY(-5px);
+                    }
+                    
+                    .cramer-formulas {
+                        background: white;
+                        padding: 1.5rem;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                    }
+
+                    /* Estilos para los títulos de sección */
+                    .section-title {
+                        color: #2c3e50;
+                        font-weight: 600;
+                        margin-bottom: 1.5rem;
+                        padding-bottom: 0.5rem;
+                        border-bottom: 2px solid #3498db;
+                    }
+
+                    /* Estilos para las badges y etiquetas */
+                    .method-badge {
+                        background: linear-gradient(145deg, #3498db, #2980b9);
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: 20px;
+                        font-weight: 500;
+                        margin-bottom: 1.5rem;
+                        display: inline-block;
+                    }
+
+                    /* Animaciones para elementos interactivos */
+                    @keyframes pulse {
+                        0% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                        100% { transform: scale(1); }
+                    }
+
+                    .interactive-element {
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    }
+
+                    .interactive-element:hover {
+                        animation: pulse 1s infinite;
+                    }
+                `;
+                document.head.appendChild(styleElement);
+
+                resultDiv.innerHTML = resultContent;
+                resultDiv.classList.add('show');
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (error) {
+                showModal(
+                    'Error en el Sistema',
+                    `<p>No se pudo resolver el sistema de ecuaciones.</p>
+                     <p>Por favor, verifique que los valores ingresados sean correctos y que el sistema tenga solución.</p>`,
+                    'error'
+                );
+                console.error('Error:', error);
+            }
+        }
+
+        // Inicializar tooltips de Bootstrap
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+            
+            updateSizeDisplay();
+            createMatrix();
+        });
+    </script>
+</body>
+</html>
