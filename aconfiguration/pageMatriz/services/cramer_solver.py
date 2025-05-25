@@ -8,6 +8,26 @@ class CramerSolver:
     def __init__(self, matrix_ops: MatrixOperations = None):
         self.matrix_ops = matrix_ops or MatrixOperations()
     
+    def _clean_number(self, number: float) -> Union[int, float]:
+        """Convierte un número a entero si no tiene parte decimal"""
+        if isinstance(number, (int, float)):
+            # Convertir a float primero para manejar números numpy
+            num_float = float(number)
+            # Si es entero, convertir a int
+            if num_float.is_integer():
+                return int(num_float)
+            # Si tiene decimales, mantener como float
+            return num_float
+        return number
+
+    def _clean_matrix(self, matrix: List[List[float]]) -> List[List[Union[int, float]]]:
+        """Limpia todos los números en una matriz"""
+        return [[self._clean_number(num) for num in row] for row in matrix]
+
+    def _clean_vector(self, vector: List[float]) -> List[Union[int, float]]:
+        """Limpia todos los números en un vector"""
+        return [self._clean_number(num) for num in vector]
+    
     def solve(self, matrix: List[List[float]], vector: List[float]) -> Optional[Dict[str, Union[List[float], str]]]:
         """
         Resuelve un sistema de ecuaciones usando el método de Cramer
@@ -46,20 +66,20 @@ class CramerSolver:
                 det_i = np.linalg.det(Ai)
                 # Calcular el valor de x_i
                 x_i = det_i / main_det
-                solution.append(float(x_i))  # Convertir a float Python estándar
-                cramer_matrices.append(Ai.tolist())
-                cramer_determinants.append(float(det_i))
+                solution.append(self._clean_number(x_i))
+                cramer_matrices.append(self._clean_matrix(Ai.tolist()))
+                cramer_determinants.append(self._clean_number(det_i))
             
             return {
                 "solution": solution,
-                "determinant": float(main_det),
-                "original_matrix": matrix,
+                "determinant": self._clean_number(main_det),
+                "original_matrix": self._clean_matrix(matrix),
                 "cramer_matrices": cramer_matrices,
                 "cramer_determinants": cramer_determinants,
                 "debug_info": {
                     "matrix_shape": A.shape,
                     "vector_shape": b.shape,
-                    "main_det": float(main_det)
+                    "main_det": self._clean_number(main_det)
                 }
             }
             

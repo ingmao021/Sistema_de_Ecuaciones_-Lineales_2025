@@ -8,6 +8,26 @@ class InverseSolver:
     def __init__(self, matrix_ops: MatrixOperations = None):
         self.matrix_ops = matrix_ops or MatrixOperations()
     
+    def _clean_number(self, number: float) -> Union[int, float]:
+        """Convierte un número a entero si no tiene parte decimal"""
+        if isinstance(number, (int, float)):
+            # Convertir a float primero para manejar números numpy
+            num_float = float(number)
+            # Si es entero, convertir a int
+            if num_float.is_integer():
+                return int(num_float)
+            # Si tiene decimales, mantener como float
+            return num_float
+        return number
+
+    def _clean_matrix(self, matrix: List[List[float]]) -> List[List[Union[int, float]]]:
+        """Limpia todos los números en una matriz"""
+        return [[self._clean_number(num) for num in row] for row in matrix]
+
+    def _clean_vector(self, vector: List[float]) -> List[Union[int, float]]:
+        """Limpia todos los números en un vector"""
+        return [self._clean_number(num) for num in vector]
+    
     def solve(self, matrix: List[List[float]], vector: List[float]) -> Optional[Dict[str, Union[List[float], str]]]:
         """
         Resuelve un sistema de ecuaciones usando el método de matriz inversa
@@ -33,13 +53,15 @@ class InverseSolver:
             # Calcular la solución: x = A^(-1) * b
             solution = A_inv.dot(b)
             
-            # Convertir a lista para la respuesta
-            solution_list = solution.tolist()
+            # Limpiar y convertir los resultados
+            solution_list = self._clean_vector(solution.tolist())
+            inverse_matrix = self._clean_matrix(A_inv.tolist())
+            clean_det = self._clean_number(det)
             
             return {
                 "solution": solution_list,
-                "determinant": float(det),
-                "inverse_matrix": A_inv.tolist()  # Incluimos la matriz inversa en la respuesta
+                "determinant": clean_det,
+                "inverse_matrix": inverse_matrix
             }
             
         except Exception as e:

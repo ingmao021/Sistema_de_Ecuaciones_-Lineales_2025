@@ -1,8 +1,12 @@
 .matrix-input {
-    width: 60px;
+    min-width: 60px;
+    width: auto;
     text-align: center;
-    margin: 5px;
-    padding: 5px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 2px;
+    transition: all 0.2s ease;
 }
 
 .equation-system {
@@ -56,10 +60,12 @@
 }
 
 .equation-row {
+    margin: 10px 0;
     display: flex;
     align-items: center;
-    margin: 10px 0;
-    white-space: nowrap;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 8px;
 }
 
 .equation-row span {
@@ -113,16 +119,6 @@
     font-weight: 500;
 }
 
-.matrix-input {
-    width: 60px;
-    text-align: center;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    padding: 4px;
-    margin: 2px;
-    transition: border-color 0.2s;
-}
-
 .matrix-input:focus {
     outline: none;
     border-color: #3498db;
@@ -132,13 +128,6 @@
 .result-input {
     background-color: #f8f9fa;
     border-color: #3498db;
-}
-
-.equation-row {
-    margin: 10px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 /* Estilos para el modal personalizado */
@@ -275,4 +264,26 @@
 .determinant-value {
     color: #e74c3c;
     font-weight: 500;
+}
+
+.matrix-table {
+    border-collapse: collapse !important;
+    width: auto !important;
+}
+
+.matrix-table td {
+    padding: 8px !important;
+    width: 40px !important;
+    height: 40px !important;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+}
+
+.matrix-table td.interactive-element {
+    background-color: #f8f9fa;
+}
+
+.matrix-display {
+    padding: 1rem !important;
 }
